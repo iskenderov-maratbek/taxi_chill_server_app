@@ -1,32 +1,72 @@
-import 'dart:io';
+import 'package:angel3_framework/angel3_framework.dart';
+import 'package:angel3_framework/http.dart';
+import 'package:angel3_graphql/angel3_graphql.dart';
+import 'package:graphql_schema2/graphql_schema2.dart';
+import 'package:graphql_server2/graphql_server2.dart';
 
-import 'package:shelf/shelf.dart';
-import 'package:shelf/shelf_io.dart';
-import 'package:shelf_router/shelf_router.dart';
+void main() async {
+  var app = Angel();
+  var http = AngelHttp(app);
 
-// Configure routes.
-final _router = Router()
-  ..get('/', _rootHandler)
-  ..get('/echo/<message>', _echoHandler);
+  final purchaseType = objectType(
+    'Purchase',
+    fields: [
+      field('id', graphQLString),
+      field('product', graphQLString),
+      field('price', graphQLFloat),
+      // Другие поля истории покупок, если нужно
+    ],
+  );
 
-Response _rootHandler(Request req) {
-  return Response.ok('Hello, World!\n');
-}
+  // Пример GraphQL схемы
+  var schema = graphQLSchema(
+    queryType: objectType('Query', fields: [
+      // Запрос для аутентификации
+      field(
+        'login',
+        objectType('AuthPayload', fields: [
+          field('accessToken', graphQLString),
+          field('refreshToken', graphQLString),
+          field('expiresIn', graphQLInt),
+          field(
+            'user',
+            objectType('User', fields: [
+              field('id', graphQLString),
+              field('username', graphQLString),
+              field('email', graphQLString),
+              // Другие поля пользователя, если нужно
+            ]),
+          ),
+        ]),
+        resolve: (_, args) async {
+          // Логика для аутентификации по номеру телефона и паролю
+          // Возврат данных о пользователе и токенах доступа
+        },
+      ),
 
-Response _echoHandler(Request request) {
-  final message = request.params['message'];
-  return Response.ok('$message\n');
-}
+      // Запрос для получения истории покупок
+      field(
+        'purchaseHistory',
+        listOf(purchaseType),
+        resolve: (_, __) async {
+          // Логика для получения истории покупок
+        },
+      ),
+    ]),
+  );
 
-void main(List<String> args) async {
-  // Use any available host or container IP (usually `0.0.0.0`).
-  final ip = InternetAddress.anyIPv4;
+  // Создание GraphQL endpoint
+  app.all('/graphql', graphQLHttp(GraphQL(schema)));
 
-  // Configure a pipeline that logs requests.
-  final handler = Pipeline().addMiddleware(logRequests()).addHandler(_router);
+  // Обработка ошибок
+  app.errorHandler = (e, req, res) {
+    print('Error: $e');
+    return res;
+  };
 
-  // For running in containers, we respect the PORT environment variable.
-  final port = int.parse(Platform.environment['PORT'] ?? '8080');
-  final server = await serve(handler, ip, port);
-  print('Server listening on port ${server.port}');
+  // Запуск сервера
+  var server = await http.startServer('192.168.8.101', 3000);
+  print('Server running on localhost:3000');
+  print(server.address.host);
+  print(server.address.isLinkLocal);
 }
