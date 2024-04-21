@@ -4,16 +4,12 @@ version: 1.0.0
 # repository: https://github.com/my_org/my_repo
 
 environment:
-  sdk: ^3.2.3
+  sdk: ^3.3.3
 
 dependencies:
-  angel3_framework: ^8.3.2
-  angel3_graphql: ^8.0.1
   args: ^2.4.0
-  graphql: ^5.2.0-beta.7
-  graphql_schema2: ^6.1.0
-  graphql_server2: ^6.1.0
-  shelf: ^1.4.1
+  shelf: ^1.4.0
+  shelf_router: ^1.1.0
 
 dev_dependencies:
   http: ^1.1.0
