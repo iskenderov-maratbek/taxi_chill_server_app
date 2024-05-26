@@ -1,8 +1,11 @@
 // handlers.dart
 import 'dart:convert';
+import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'confirm_codes.dart';
+import 'json_transformer.dart';
+import 'log.dart';
 import 'queries.dart';
 
 class Handlers {
@@ -19,32 +22,35 @@ class Handlers {
     return Response.ok('Added $message to the database\n');
   }
 
-  Future<Response> loginWithEmail(Request request) async {
+  Future<Response> sendCodeToNumber(Request request) async {
+    sleep(Duration(seconds: 5));
     print('loginUser');
-    final params = await request
-        .readAsString()
-        .then((body) => jsonDecode(body) as Map<String, dynamic>);
-    final email = params['email'] as String;
-    print('email: $email');
-    if (email.isNotEmpty) {
-      if (await dbQueries.checkUser(email)) {
-        if (codes.hasCode(email)) {
-          print('КОД ПОДТВЕРЖДЕНИЯ: ${codes.generateCode(email)}');
+    final params = JsonTransfomer(await decodeJson(request));
+    if (params.number.isNotEmpty) {
+      if (await dbQueries.checkUser(params.number)) {
+        if (codes.hasCode(params.number)) {
+          print('КОД ПОДТВЕРЖДЕНИЯ: ${codes.generateCode(params.number)}');
           //Отправляем код на почту
-          return Response.ok('Код отправлен на почту');
+          Map<String, String> responseData = {
+            'status': 'success',
+            'number': params.number,
+          };
+
+          return Response.ok(jsonEncode(responseData),
+              headers: {'Content-Type': 'application/json'});
         }
-      }else{
+      } else {
+        logInfo('Аккаунт не зарегистрирован');
         return Response.notFound('Аккаунт не зарегистрирован');
       }
     }
-    return Response.badRequest(body: 'Ошибка, пожалуйста, попробуйте снова');
+    return Response.notFound('Not_Found');
   }
 
   Future<Response> loginWithNumber(Request request) async {
     print('loginUser');
-    final params = await request
-        .readAsString()
-        .then((body) => jsonDecode(body) as Map<String, dynamic>);
+    final params =
+        await request.readAsString().then((body) => jsonDecode(body) as Map<String, dynamic>);
     final number = params['number'] as String;
     print('number: $number');
     if (number.isNotEmpty) {
@@ -61,9 +67,8 @@ class Handlers {
 
   Future<Response> verificationCode(Request request) async {
     print('verificationCode');
-    final params = await request
-        .readAsString()
-        .then((body) => jsonDecode(body) as Map<String, dynamic>);
+    final params =
+        await request.readAsString().then((body) => jsonDecode(body) as Map<String, dynamic>);
     final verifyCode = params['verifyCode'] as String;
     final email = params['email'] as String;
     print('verifyCode: $verifyCode');

@@ -14,15 +14,8 @@ void main(List<String> args) async {
 
   final conn = await Connection.open(
     Endpoint(
-      host: '127.0.0.1',
-      port: 5432,
-      database: 'test_db',
-      username: 'postgres',
-      password: 'inaneonly1',
-    ),
-    settings: ConnectionSettings(
-      sslMode: SslMode.disable,
-    ),
+        host: '127.0.0.1', port: 5432, database: 'test_db', username: 'postgres', password: '7450'),
+    settings: ConnectionSettings(sslMode: SslMode.disable),
   );
   ConfirmCodes codes = ConfirmCodes();
   DatabaseQueries dbQueries = DatabaseQueries(conn);
@@ -31,12 +24,11 @@ void main(List<String> args) async {
   final router = Router()
     ..get('/', handlers.rootHandler)
     ..get('/echo/<message>', handlers.echoHandler)
-    ..post('/login-with-email', handlers.loginWithEmail)
+    ..post('/send-code-to-number', handlers.sendCodeToNumber)
     ..post('/login-with-number', handlers.loginWithNumber)
     ..post('/verify-code', handlers.verificationCode);
 
-  final handler =
-      Pipeline().addMiddleware(logRequests()).addHandler(router.call);
+  final handler = Pipeline().addMiddleware(logRequests()).addHandler(router.call);
 
   final server = await serve(handler, ip, port);
   print('Server listening on port ${server.port}');

@@ -1,4 +1,5 @@
 // database_queries.dart
+
 import 'package:postgres/postgres.dart';
 
 class DatabaseQueries {
@@ -16,9 +17,7 @@ class DatabaseQueries {
      '''),
       parameters: {'email': email},
     );
-    return result.isNotEmpty
-        ? email.contains(result.first.first.toString())
-        : false;
+    return result.isNotEmpty ? email.contains(result.first.first.toString()) : false;
   }
 
   Future<Map<String, dynamic>?> getUserByEmail(String email) async {
