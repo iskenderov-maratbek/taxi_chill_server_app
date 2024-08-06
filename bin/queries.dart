@@ -7,7 +7,7 @@ class DatabaseQueries {
 
   DatabaseQueries(this.connection);
 
-  Future<bool> checkUser(String email) async {
+  Future<bool> hasUser(String email) async {
     print('getUserByEmail: $email');
     final result = await connection.execute(
       Sql.named('''

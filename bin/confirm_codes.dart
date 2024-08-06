@@ -1,39 +1,33 @@
 import 'dart:math';
 
+import 'package:hive/hive.dart';
+
 class ConfirmCodes {
+  final Box<dynamic> _box;
+  ConfirmCodes(this._box);
   static final _random = Random();
-  final Map<String, List> _codes = {};
 
-  String generateCode(String email) {
+  Future<String> generateCode(String userdata) async {
     DateTime now = DateTime.now();
-
-    _codes[email] = [List.generate(4, (_) => _random.nextInt(10)).join(), now];
-    return _codes[email]?[0];
+    var result = List.generate(4, (_) => _random.nextInt(10)).join();
+    await _box.put(userdata, [result, now]);
+    return result;
   }
 
-  bool hasCode(String email) {
-    if (_codes.containsKey(email)) {
-      DateTime now = DateTime.now();
-      return now.difference(_codes[email]?[1]).inSeconds >= 10;
-    } else {
-      return true;
-    }
+  bool checkCode(String userdata) {
+    return _box.get(userdata) != null;
   }
 
-  String? checkCode({required String code, required String email}) {
-    if (_codes.containsKey(email)) {
+  int? canSendCode(String userdata) {
+    if (checkCode(userdata)) {
       DateTime now = DateTime.now();
-      if (now.difference(_codes[email]?[1]).inSeconds >= 60) {
-        return 'Время действия кода истекло';
+      var timeleft = now.difference(_box.get(userdata)[1]).inSeconds;
+      if (timeleft >= 30) {
+        return null;
       } else {
-        if (_codes[email]![0].toString().contains(code)) {
-          return null;
-        } else {
-          return 'Неверный код!';
-        }
+        return timeleft;
       }
-    } else {
-      return 'Ошибка, попробуйте позже!';
     }
+    return null;
   }
 }
